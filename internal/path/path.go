@@ -17,6 +17,7 @@ import (
 	"github.com/aler9/rtsp-simple-server/internal/logger"
 	"github.com/aler9/rtsp-simple-server/internal/sourcertmp"
 	"github.com/aler9/rtsp-simple-server/internal/sourcertsp"
+	"github.com/aler9/rtsp-simple-server/internal/sourcerpicamera"
 	"github.com/aler9/rtsp-simple-server/internal/stats"
 )
 
@@ -38,7 +39,8 @@ type source interface {
 	IsSource()
 }
 
-// sourceExternal is implemented by all source*.
+// a sourceExternal can be
+// * source*.Source
 type sourceExternal interface {
 	IsSource()
 	IsSourceExternal()
@@ -405,7 +407,8 @@ func (pa *Path) exhaustChannels() {
 func (pa *Path) hasExternalSource() bool {
 	return strings.HasPrefix(pa.conf.Source, "rtsp://") ||
 		strings.HasPrefix(pa.conf.Source, "rtsps://") ||
-		strings.HasPrefix(pa.conf.Source, "rtmp://")
+		strings.HasPrefix(pa.conf.Source, "rtmp://") ||
+		pa.conf.Source == "rpicamera"
 }
 
 func (pa *Path) startExternalSource() {
@@ -426,6 +429,12 @@ func (pa *Path) startExternalSource() {
 		pa.source = sourcertmp.New(
 			pa.conf.Source,
 			pa.readTimeout,
+			&pa.sourceWg,
+			pa.stats,
+			pa)
+
+	} else if pa.conf.Source == "rpicamera" {
+		pa.source = sourcerpicamera.New(
 			&pa.sourceWg,
 			pa.stats,
 			pa)

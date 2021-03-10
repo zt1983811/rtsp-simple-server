@@ -183,6 +183,8 @@ func (pconf *PathConf) fillAndCheck(name string) error {
 			}
 		}
 
+	} else if pconf.Source == "rpicamera" {
+
 	} else if pconf.Source == "redirect" {
 		if pconf.SourceRedirect == "" {
 			return fmt.Errorf("source redirect must be filled")

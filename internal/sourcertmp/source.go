@@ -23,7 +23,7 @@ const (
 	retryPause = 5 * time.Second
 )
 
-// Parent is implemeneted by path.Path.
+// Parent is implemented by path.Path.
 type Parent interface {
 	Log(logger.Level, string, ...interface{})
 	OnSourceSetReady(gortsplib.Tracks)
