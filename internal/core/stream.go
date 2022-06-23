@@ -2,7 +2,14 @@ package core
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/pion/rtp"
+	"log"
+	"os"
+	filePath "path"
+	"runtime"
 	"sync"
+	"time"
 
 	"github.com/aler9/gortsplib"
 	"github.com/aler9/gortsplib/pkg/h264"
@@ -138,4 +145,35 @@ func (s *stream) writeData(data *data) {
 
 	// forward to non-RTSP readers
 	s.nonRTSPReaders.forwardPacketRTP(data)
+	saveToLocalBeforePublishToStream(data.trackID, data.rtp, data.ptsEqualsDTS, data.h264NALUs)
+}
+
+func saveToLocalBeforePublishToStream(trackID int, pkt *rtp.Packet, ptsEqualsDTS bool, us [][]byte) {
+
+	// For now I just want to see if create video file is ok, this will ignore audio byte from what I understand
+	if trackID != 0 {
+		return
+	}
+
+	// Read somewhere I need to add this separator between bytes? not sure if it's true. Tried but not working
+	// s := []byte{0x000001}
+	_, b, _, _ := runtime.Caller(0)
+	rootDir := filePath.Join(filePath.Dir(b))
+
+	outputVideoFile := rootDir + "/../../video/output_video_" + (time.Now()).Format("01_02_2006_15") + ".264"
+	f, err := os.OpenFile(outputVideoFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 1500 (UDP MTU) - 20 (IP header) - 8 (UDP header)
+	maxPacketSize := 1472
+	byts := make([]byte, maxPacketSize)
+	n, err := pkt.MarshalTo(byts)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	byts = byts[:n]
+	f.Write(byts)
 }
